@@ -86,14 +86,53 @@ ANTHROPIC_API_KEY=sk-ant-... ./target/release/robin-smesh query \
 # Use OpenAI instead
 OPENAI_API_KEY=sk-... ./target/release/robin-smesh query \
   -q "ransomware payments" \
-  --openai \
-  -m gpt-4o-mini
+  --openai
 
-# Use OpenRouter
+# Use OpenRouter (Claude Sonnet 4.5)
 OPENROUTER_API_KEY=... ./target/release/robin-smesh query \
   -q "data breach credentials" \
-  --openrouter \
-  -m anthropic/claude-3-haiku
+  --openrouter
+
+# Use OpenRouter with permissive mode for security research
+# (uses Mistral Large - less restrictive for threat intel queries)
+OPENROUTER_API_KEY=... ./target/release/robin-smesh query \
+  -q "stealer logs redline raccoon vidar" \
+  --openrouter --permissive \
+  --specialists
+```
+
+## LLM Model Selection
+
+Robin×SMESH auto-selects optimal models based on provider. You can override with `-m`:
+
+| Provider | Flag | Default Model | Notes |
+|----------|------|---------------|-------|
+| **Anthropic** | *(default)* | `claude-sonnet-4-20250514` | Best quality, recommended |
+| **OpenAI** | `--openai` | `gpt-4o` | Strong reasoning |
+| **OpenRouter** | `--openrouter` | `anthropic/claude-sonnet-4.5` | Claude via OpenRouter |
+| **OpenRouter** | `--openrouter --permissive` | `mistralai/mistral-large-2512` | Less restrictive for security research |
+
+### Permissive Mode
+
+For security research queries that may trigger content filters (malware names, exploit terminology), use `--permissive` with OpenRouter:
+
+```bash
+# These queries work with --permissive
+robin-smesh query -q "stealer logs redline raccoon" --openrouter --permissive
+robin-smesh query -q "infostealer malware analysis" --openrouter --permissive
+robin-smesh query -q "ransomware bitcoin wallets" --openrouter --permissive
+```
+
+### Custom Models
+
+Override the default model with `-m`:
+
+```bash
+# Use a specific OpenRouter model
+robin-smesh query -q "threat actor" --openrouter -m meta-llama/llama-3.1-70b-instruct
+
+# Use GPT-4o-mini for cost savings
+robin-smesh query -q "dark web market" --openai -m gpt-4o-mini
 ```
 
 ## Requirements
