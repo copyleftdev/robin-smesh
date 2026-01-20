@@ -6,6 +6,7 @@
 //! - **Filter**: Ranks results by relevance
 //! - **Scraper**: Extracts content from dark web sites
 //! - **Extractor**: Identifies IOCs and artifacts
+//! - **Enricher**: Queries external OSINT sources (GitHub, Brave)
 //! - **Analyst**: Synthesizes intelligence summaries
 //!
 //! ## Modular Personas
@@ -21,6 +22,7 @@ pub mod crawler;
 pub mod filter;
 pub mod scraper;
 pub mod extractor;
+pub mod enricher;
 pub mod analyst;
 pub mod traits;
 
@@ -32,5 +34,6 @@ pub use crawler::*;
 pub use filter::*;
 pub use scraper::*;
 pub use extractor::*;
+pub use enricher::*;
 pub use analyst::*;
 pub use traits::*;

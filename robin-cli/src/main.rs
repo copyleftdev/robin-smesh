@@ -77,6 +77,10 @@ enum Commands {
         /// Use multi-specialist analyst mode (6 experts + lead synthesis)
         #[arg(long)]
         specialists: bool,
+
+        /// Enable external OSINT enrichment (GitHub, Brave search)
+        #[arg(long)]
+        enrich: bool,
     },
 
     /// Check Tor connection status
@@ -119,6 +123,7 @@ async fn main() -> Result<()> {
             crawlers,
             scrapers,
             specialists,
+            enrich,
         } => {
             run_query(
                 &query,
@@ -133,6 +138,7 @@ async fn main() -> Result<()> {
                 crawlers,
                 scrapers,
                 specialists,
+                enrich,
             )
             .await?;
         }
@@ -162,6 +168,7 @@ async fn run_query(
     crawlers: usize,
     scrapers: usize,
     use_specialists: bool,
+    enable_enrichment: bool,
 ) -> Result<()> {
     println!("🕵️ Robin×SMESH - Decentralized Dark Web OSINT\n");
 
@@ -186,11 +193,13 @@ async fn run_query(
 
     let provider = if use_openrouter { "OpenRouter" } else if use_openai { "OpenAI" } else { "Anthropic" };
     let analyst_mode = if use_specialists { "multi-specialist (6 experts)" } else { "single" };
+    let enrichment_mode = if enable_enrichment { "enabled" } else { "disabled" };
     println!("📡 Provider: {} | Model: {}", provider, model);
     println!("🔍 Query: {}", query);
     println!("⏱️  Timeout: {}s", timeout);
-    println!("🤖 Agents: 1 refiner, {} crawlers, 1 filter, {} scrapers, 1 extractor, 1 analyst ({})\n",
-        crawlers, scrapers, analyst_mode);
+    println!("🤖 Agents: 1 refiner, {} crawlers, 1 filter, {} scrapers, 1 extractor, {}1 analyst ({})",
+        crawlers, scrapers, if enable_enrichment { "1 enricher, " } else { "" }, analyst_mode);
+    println!("🌐 External enrichment: {}\n", enrichment_mode);
 
     // Check Tor connection
     println!("🔌 Checking Tor connection...");
@@ -215,6 +224,7 @@ async fn run_query(
         num_crawlers: crawlers,
         num_scrapers: scrapers,
         use_specialists,
+        enable_enrichment,
     };
 
     let mut swarm = Swarm::new(config)?;

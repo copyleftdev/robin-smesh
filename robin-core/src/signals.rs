@@ -86,6 +86,16 @@ pub enum OsintPayload {
         source_count: usize,
     },
 
+    /// Enriched artifacts from external OSINT sources
+    EnrichedArtifacts {
+        /// Original artifact that was enriched
+        artifact: Artifact,
+        /// External source (github, brave, shodan, etc.)
+        source: String,
+        /// Enrichment findings
+        findings: Vec<EnrichmentFinding>,
+    },
+
     /// Heartbeat signal for agent liveness
     Heartbeat {
         agent_id: String,
@@ -115,6 +125,21 @@ pub enum InsightCategory {
     Attribution,
 }
 
+/// A finding from external OSINT enrichment
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EnrichmentFinding {
+    /// Type of finding (github_repo, github_user, web_mention, etc.)
+    pub finding_type: String,
+    /// Title or summary of the finding
+    pub title: String,
+    /// URL where this was found
+    pub url: Option<String>,
+    /// Snippet/context of the finding
+    pub snippet: String,
+    /// Relevance score (0.0 - 1.0)
+    pub relevance: f64,
+}
+
 /// Types of agents in the OSINT swarm
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -124,6 +149,7 @@ pub enum AgentType {
     Filter,
     Scraper,
     Extractor,
+    Enricher,
     Analyst,
 }
 

@@ -11,8 +11,8 @@ use tokio::time::interval;
 use tracing::{debug, error, info, warn};
 
 use robin_agents::{
-    AgentConfig, AgentError, AnalystAgent, CrawlerAgent, ExtractorAgent, FilterAgent,
-    OsintAgent, RefinerAgent, ScraperAgent, SharedBackend,
+    AgentConfig, AgentError, AnalystAgent, CrawlerAgent, EnrichmentAgent, EnrichmentConfig,
+    ExtractorAgent, FilterAgent, OsintAgent, RefinerAgent, ScraperAgent, SharedBackend,
 };
 use robin_core::{Field, OsintPayload, Signal};
 use robin_tor::TorConfig;
@@ -33,6 +33,8 @@ pub struct SwarmConfig {
     pub num_scrapers: usize,
     /// Use multi-specialist analyst mode
     pub use_specialists: bool,
+    /// Enable external OSINT enrichment (GitHub, Brave search)
+    pub enable_enrichment: bool,
 }
 
 /// The OSINT swarm coordinator
@@ -42,6 +44,7 @@ pub struct Swarm {
     tick_interval_ms: u64,
     max_runtime_secs: u64,
     use_specialists: bool,
+    enable_enrichment: bool,
     field: Field,
     agents: Vec<Box<dyn OsintAgent>>,
 }
@@ -50,12 +53,14 @@ impl Swarm {
     /// Create a new swarm with configuration
     pub fn new(config: SwarmConfig) -> Result<Self, anyhow::Error> {
         let use_specialists = config.use_specialists;
+        let enable_enrichment = config.enable_enrichment;
         let mut swarm = Self {
             backend: config.backend,
             tor_config: config.tor_config,
             tick_interval_ms: config.tick_interval_ms,
             max_runtime_secs: config.max_runtime_secs,
             use_specialists,
+            enable_enrichment,
             field: Field::new(),
             agents: Vec::new(),
         };
@@ -102,6 +107,16 @@ impl Swarm {
         // Extractor agent (1)
         let extractor = ExtractorAgent::new(AgentConfig::default().with_id("extractor-1"));
         self.agents.push(Box::new(extractor));
+
+        // Enrichment agent (optional) - queries external OSINT sources
+        if self.enable_enrichment {
+            info!("Enabling external OSINT enrichment (GitHub, Brave)");
+            let enricher = EnrichmentAgent::new(
+                AgentConfig::default().with_id("enricher-1"),
+                EnrichmentConfig::default(),
+            );
+            self.agents.push(Box::new(enricher));
+        }
 
         // Analyst agent (1) - with or without specialists
         let analyst = if self.use_specialists {
@@ -253,6 +268,7 @@ mod tests {
             num_crawlers: 2,
             num_scrapers: 3,
             use_specialists: false,
+            enable_enrichment: false,
         };
 
         let swarm = Swarm::new(config);
@@ -272,6 +288,7 @@ mod tests {
             num_crawlers: 2,
             num_scrapers: 3,
             use_specialists: false,
+            enable_enrichment: false,
         };
 
         let mut swarm = Swarm::new(config).unwrap();
