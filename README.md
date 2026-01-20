@@ -1,18 +1,20 @@
-```
-                    ██████╗  ██████╗ ██████╗ ██╗███╗   ██╗
-                    ██╔══██╗██╔═══██╗██╔══██╗██║████╗  ██║
-                    ██████╔╝██║   ██║██████╔╝██║██╔██╗ ██║
-                    ██╔══██╗██║   ██║██╔══██╗██║██║╚██╗██║
-                    ██║  ██║╚██████╔╝██████╔╝██║██║ ╚████║
-                    ╚═╝  ╚═╝ ╚═════╝ ╚═════╝ ╚═╝╚═╝  ╚═══╝
-                         ╔═╗╔╦╗╔═╗╔═╗╦ ╦
-                     ×   ╚═╗║║║║╣ ╚═╗╠═╣   ×
-                         ╚═╝╩ ╩╚═╝╚═╝╩ ╩
-        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-              🕸️  Decentralized Dark Web OSINT  🕸️
-                   Signal Diffusion Protocol
-        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
+<p align="center">
+  <img src="media/logo.png" alt="Robin×SMESH Logo" width="300"/>
+</p>
+
+<h1 align="center">Robin×SMESH</h1>
+
+<p align="center">
+  <strong>🕸️ Decentralized Dark Web OSINT via Signal Diffusion 🕸️</strong>
+</p>
+
+<p align="center">
+  <a href="#quick-start">Quick Start</a> •
+  <a href="#architecture">Architecture</a> •
+  <a href="#multi-specialist-analysis">Specialists</a> •
+  <a href="#external-osint-enrichment">Enrichment</a> •
+  <a href="./reports/">Reports</a>
+</p>
 
 A Rust reimagining of [Robin](https://github.com/apurvsinghgautam/robin) that replaces central LLM orchestration with [SMESH](https://github.com/copyleftdev/smesh-rust)'s plant-inspired signal diffusion protocol.
 
