@@ -12,8 +12,8 @@ use tracing::{debug, error, info, warn};
 
 use robin_agents::{
     AgentConfig, AgentError, AnalystAgent, BlockchainAgent, BlockchainConfig, CrawlerAgent,
-    EnrichmentAgent, EnrichmentConfig, ExtractorAgent, FilterAgent, OsintAgent, RefinerAgent,
-    ScraperAgent, SharedBackend,
+    EnrichmentAgent, EnrichmentConfig, ExtractorAgent, FilterAgent, OsintAgent,
+    PasteMonitorAgent, PasteMonitorConfig, RefinerAgent, ScraperAgent, SharedBackend,
 };
 use robin_core::{Field, OsintPayload, Signal};
 use robin_tor::TorConfig;
@@ -38,6 +38,8 @@ pub struct SwarmConfig {
     pub enable_enrichment: bool,
     /// Enable blockchain temporal analysis
     pub enable_blockchain: bool,
+    /// Enable paste site monitoring
+    pub enable_pastes: bool,
 }
 
 /// The OSINT swarm coordinator
@@ -49,6 +51,7 @@ pub struct Swarm {
     use_specialists: bool,
     enable_enrichment: bool,
     enable_blockchain: bool,
+    enable_pastes: bool,
     field: Field,
     agents: Vec<Box<dyn OsintAgent>>,
 }
@@ -59,6 +62,7 @@ impl Swarm {
         let use_specialists = config.use_specialists;
         let enable_enrichment = config.enable_enrichment;
         let enable_blockchain = config.enable_blockchain;
+        let enable_pastes = config.enable_pastes;
         let mut swarm = Self {
             backend: config.backend,
             tor_config: config.tor_config,
@@ -67,6 +71,7 @@ impl Swarm {
             use_specialists,
             enable_enrichment,
             enable_blockchain,
+            enable_pastes,
             field: Field::new(),
             agents: Vec::new(),
         };
@@ -132,6 +137,16 @@ impl Swarm {
                 BlockchainConfig::default(),
             );
             self.agents.push(Box::new(blockchain));
+        }
+
+        // Paste monitor agent (optional) - search public paste sites
+        if self.enable_pastes {
+            info!("Enabling paste site monitoring (Pastebin, Rentry, dpaste, etc.)");
+            let paste_monitor = PasteMonitorAgent::new(
+                AgentConfig::default().with_id("paste-monitor-1"),
+                PasteMonitorConfig::default(),
+            );
+            self.agents.push(Box::new(paste_monitor));
         }
 
         // Analyst agent (1) - with or without specialists
@@ -286,6 +301,7 @@ mod tests {
             use_specialists: false,
             enable_enrichment: false,
             enable_blockchain: false,
+            enable_pastes: false,
         };
 
         let swarm = Swarm::new(config);
@@ -307,6 +323,7 @@ mod tests {
             use_specialists: false,
             enable_enrichment: false,
             enable_blockchain: false,
+            enable_pastes: false,
         };
 
         let mut swarm = Swarm::new(config).unwrap();

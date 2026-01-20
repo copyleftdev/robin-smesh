@@ -106,6 +106,22 @@ pub enum OsintPayload {
         analysis: WalletAnalysis,
     },
 
+    /// Paste site content discovered
+    PasteContent {
+        /// URL of the paste
+        url: String,
+        /// Paste site name (pastebin, rentry, ghostbin, etc.)
+        site: String,
+        /// Title if available
+        title: Option<String>,
+        /// Raw content of the paste
+        content: String,
+        /// When the paste was created (if known)
+        created_at: Option<String>,
+        /// Paste author if available
+        author: Option<String>,
+    },
+
     /// Heartbeat signal for agent liveness
     Heartbeat {
         agent_id: String,
@@ -195,6 +211,7 @@ pub enum AgentType {
     Extractor,
     Enricher,
     BlockchainAnalyst,
+    PasteMonitor,
     Analyst,
 }
 

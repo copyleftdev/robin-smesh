@@ -19,6 +19,7 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 toml = "0.8"
 urlencoding = "2.1"
+scraper = "0.20"
 tracing = { workspace = true }
 thiserror = { workspace = true }
 uuid = { workspace = true }

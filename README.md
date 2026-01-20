@@ -180,6 +180,18 @@ Analysis includes:
 - **Timezone inference** – Activity concentration by hour
 - Risk indicators (high volume, recent activity, contract interactions)
 
+## Paste Site Monitoring
+
+With `--pastes`, public paste sites are searched for leaked data matching query terms:
+
+- **Pastebin** – Via psbdmp.ws API (paste dump search)
+- **Rentry.co** – Slug-based discovery
+- **dpaste.org** – Recent pastes API
+- **ControlC** – Search interface
+- **JustPaste.it** – Search interface
+
+This catches leaked credentials, wallet addresses, and IOCs that often appear on paste sites before propagating to dark web markets.
+
 ## Example Reports
 
 Sample investigation reports are available in [`reports/`](./reports/):

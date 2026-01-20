@@ -85,6 +85,10 @@ enum Commands {
         /// Enable blockchain temporal analysis (Blockstream, Etherscan)
         #[arg(long)]
         blockchain: bool,
+
+        /// Enable paste site monitoring (Pastebin, Rentry, dpaste, etc.)
+        #[arg(long)]
+        pastes: bool,
     },
 
     /// Check Tor connection status
@@ -129,6 +133,7 @@ async fn main() -> Result<()> {
             specialists,
             enrich,
             blockchain,
+            pastes,
         } => {
             run_query(
                 &query,
@@ -145,6 +150,7 @@ async fn main() -> Result<()> {
                 specialists,
                 enrich,
                 blockchain,
+                pastes,
             )
             .await?;
         }
@@ -176,6 +182,7 @@ async fn run_query(
     use_specialists: bool,
     enable_enrichment: bool,
     enable_blockchain: bool,
+    enable_pastes: bool,
 ) -> Result<()> {
     println!("🕵️ Robin×SMESH - Decentralized Dark Web OSINT\n");
 
@@ -206,15 +213,17 @@ async fn run_query(
     println!("🔍 Query: {}", query);
     println!("⏱️  Timeout: {}s", timeout);
     
+    let pastes_mode = if enable_pastes { "enabled" } else { "disabled" };
     let optional_agents = [
         if enable_enrichment { Some("1 enricher") } else { None },
         if enable_blockchain { Some("1 blockchain") } else { None },
+        if enable_pastes { Some("1 paste-monitor") } else { None },
     ].into_iter().flatten().collect::<Vec<_>>().join(", ");
     let optional_str = if optional_agents.is_empty() { String::new() } else { format!("{}, ", optional_agents) };
     
     println!("🤖 Agents: 1 refiner, {} crawlers, 1 filter, {} scrapers, 1 extractor, {}1 analyst ({})",
         crawlers, scrapers, optional_str, analyst_mode);
-    println!("🌐 External enrichment: {} | ⛓️  Blockchain analysis: {}\n", enrichment_mode, blockchain_mode);
+    println!("🌐 Enrichment: {} | ⛓️  Blockchain: {} | 📋 Pastes: {}\n", enrichment_mode, blockchain_mode, pastes_mode);
 
     // Check Tor connection
     println!("🔌 Checking Tor connection...");
@@ -241,6 +250,7 @@ async fn run_query(
         use_specialists,
         enable_enrichment,
         enable_blockchain,
+        enable_pastes,
     };
 
     let mut swarm = Swarm::new(config)?;
