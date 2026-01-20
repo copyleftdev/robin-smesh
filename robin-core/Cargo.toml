@@ -1,0 +1,16 @@
+[package]
+name = "robin-core"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Core signal types and domain model for Robin×SMESH"
+
+[dependencies]
+chrono = { workspace = true }
+uuid = { workspace = true }
+sha2 = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+regex = { workspace = true }

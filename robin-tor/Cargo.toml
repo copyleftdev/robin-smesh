@@ -1,0 +1,19 @@
+[package]
+name = "robin-tor"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Tor networking layer for Robin×SMESH"
+
+[dependencies]
+robin-core = { path = "../robin-core" }
+
+tokio = { workspace = true }
+reqwest = { workspace = true }
+scraper = { workspace = true }
+futures = { workspace = true }
+tracing = { workspace = true }
+thiserror = { workspace = true }
+rand = { workspace = true }
+regex = { workspace = true }

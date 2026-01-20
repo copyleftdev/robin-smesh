@@ -1,0 +1,22 @@
+[package]
+name = "robin-agents"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Specialized OSINT agents for Robin×SMESH"
+
+[dependencies]
+robin-core = { path = "../robin-core" }
+robin-tor = { path = "../robin-tor" }
+
+tokio = { workspace = true }
+futures = { workspace = true }
+async-trait = { workspace = true }
+async-openai = { workspace = true }
+reqwest = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+thiserror = { workspace = true }
+uuid = { workspace = true }

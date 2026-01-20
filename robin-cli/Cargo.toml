@@ -1,0 +1,24 @@
+[package]
+name = "robin-cli"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "CLI for Robin×SMESH dark web OSINT tool"
+
+[[bin]]
+name = "robin-smesh"
+path = "src/main.rs"
+
+[dependencies]
+robin-core = { path = "../robin-core" }
+robin-tor = { path = "../robin-tor" }
+robin-agents = { path = "../robin-agents" }
+robin-runtime = { path = "../robin-runtime" }
+
+tokio = { workspace = true }
+clap = { version = "4.4", features = ["derive", "env"] }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+anyhow = { workspace = true }
+chrono = { workspace = true }
