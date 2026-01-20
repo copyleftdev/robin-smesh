@@ -17,6 +17,7 @@ async-openai = { workspace = true }
 reqwest = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+toml = "0.8"
 tracing = { workspace = true }
 thiserror = { workspace = true }
 uuid = { workspace = true }

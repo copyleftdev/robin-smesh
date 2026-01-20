@@ -3,66 +3,61 @@
 //! Synthesizes intelligence summaries from scraped content and artifacts.
 //! - Senses: ScrapedContent + ExtractedArtifacts signals
 //! - Emits: Summary signal
+//!
+//! ## Multi-Specialist Mode
+//!
+//! When enabled, runs multiple specialist analysts (crypto, forensic, malware,
+//! threat actor, network, OSINT) in parallel, then synthesizes via lead analyst.
+//! Enable with `AnalystAgent::new_with_specialists()`.
 
 use async_trait::async_trait;
 use tracing::info;
 
 use robin_core::{AgentType, Artifact, Field, OsintPayload, Signal};
 
-use crate::{AgentConfig, AgentError, OsintAgent, SharedBackend};
-
-/// System prompt for intelligence analysis
-const ANALYST_SYSTEM_PROMPT: &str = r#"
-You are a Cybercrime Threat Intelligence Expert tasked with generating investigative insights from dark web OSINT data.
-
-Rules:
-1. Analyze the provided dark web data (URLs, content, artifacts)
-2. Output source links referenced for analysis
-3. Provide detailed, evidence-based technical analysis
-4. List intelligence artifacts with context (emails, crypto addresses, domains, threat actors, malware, TTPs)
-5. Generate 3-5 key insights that are specific, actionable, and data-driven
-6. Include suggested next steps for further investigation
-7. Be objective and analytical
-8. Ignore NSFW content
-
-Output Format:
-# Investigation Summary
-
-## Input Query
-{query}
-
-## Source Links Referenced
-- [list sources]
-
-## Intelligence Artifacts
-- [categorized artifacts with context]
-
-## Key Insights
-1. [insight with evidence]
-2. [insight with evidence]
-...
-
-## Next Steps
-- [recommended actions]
-- [follow-up queries]
-
-INPUT DATA:
-"#;
+use crate::{AgentConfig, AgentError, OsintAgent, SharedBackend, SpecialistSystem};
 
 /// Analyst agent - synthesizes intelligence summaries
 pub struct AnalystAgent {
     config: AgentConfig,
     backend: SharedBackend,
+    specialist_system: Option<SpecialistSystem>,
     summary_generated: bool,
 }
 
 impl AnalystAgent {
+    /// Create a new analyst with single-pass analysis (legacy mode)
     pub fn new(config: AgentConfig, backend: SharedBackend) -> Self {
         Self {
             config,
             backend,
+            specialist_system: None,
             summary_generated: false,
         }
+    }
+
+    /// Create a new analyst with multi-specialist analysis
+    pub fn new_with_specialists(config: AgentConfig, backend: SharedBackend) -> Self {
+        let specialist_system = SpecialistSystem::new(backend.clone());
+        Self {
+            config,
+            backend,
+            specialist_system: Some(specialist_system),
+            summary_generated: false,
+        }
+    }
+
+    /// Check if multi-specialist mode is enabled
+    pub fn has_specialists(&self) -> bool {
+        self.specialist_system.is_some()
+    }
+
+    /// List available specialist analysts (if enabled)
+    pub fn list_specialists(&self) -> Vec<&str> {
+        self.specialist_system
+            .as_ref()
+            .map(|s| s.list_specialists())
+            .unwrap_or_default()
     }
 
     async fn generate_summary(
@@ -71,39 +66,55 @@ impl AnalystAgent {
         content: &[(String, String)], // (url, text)
         artifacts: &[Artifact],
     ) -> Result<String, AgentError> {
-        // Build input data string
-        let mut input = String::new();
+        // Build content string
+        let content_str = content
+            .iter()
+            .take(10)
+            .map(|(url, text)| {
+                let truncated = if text.len() > 1500 {
+                    format!("{}...", &text[..1500])
+                } else {
+                    text.clone()
+                };
+                format!("### {}\n{}\n", url, truncated)
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
 
-        // Add content summaries
-        input.push_str("## Scraped Content\n\n");
-        for (url, text) in content.iter().take(10) {
-            // Truncate text for LLM context limits
-            let truncated = if text.len() > 1500 {
-                format!("{}...", &text[..1500])
-            } else {
-                text.clone()
-            };
-            input.push_str(&format!("### {}\n{}\n\n", url, truncated));
+        // Build artifacts string
+        let artifacts_str = artifacts
+            .iter()
+            .take(50)
+            .map(|a| format!("- {:?}: {} (confidence: {:.2})", a.artifact_type, a.value, a.confidence))
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        // Use specialist system if available, otherwise fall back to lead-only
+        if let Some(ref specialist_system) = self.specialist_system {
+            info!("Running multi-specialist analysis with {} specialists", 
+                specialist_system.list_specialists().len());
+            
+            specialist_system
+                .full_analysis(query, &content_str, &artifacts_str)
+                .await
+                .map_err(|e| AgentError::Llm(e.to_string()))
+        } else {
+            // Fallback: use lead analyst prompt directly
+            let lead = crate::PersonaRegistry::load_embedded()
+                .lead_analyst()
+                .map(|p| p.system_prompt().to_string())
+                .unwrap_or_else(|| "Analyze the following OSINT data and provide a summary.".to_string());
+
+            let input = format!(
+                "# Investigation Context\n\n## Original Query\n{}\n\n## Scraped Content\n{}\n\n## Extracted Artifacts\n{}",
+                query, content_str, artifacts_str
+            );
+
+            self.backend
+                .generate(&lead, &input)
+                .await
+                .map_err(|e| AgentError::Llm(e.to_string()))
         }
-
-        // Add artifacts
-        input.push_str("## Extracted Artifacts\n\n");
-        for artifact in artifacts.iter().take(50) {
-            input.push_str(&format!(
-                "- {:?}: {} (confidence: {:.2})\n",
-                artifact.artifact_type, artifact.value, artifact.confidence
-            ));
-        }
-
-        let system = ANALYST_SYSTEM_PROMPT.replace("{query}", query);
-
-        let summary = self
-            .backend
-            .generate(&system, &input)
-            .await
-            .map_err(|e| AgentError::Llm(e.to_string()))?;
-
-        Ok(summary)
     }
 }
 

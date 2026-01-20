@@ -7,8 +7,15 @@
 //! - **Scraper**: Extracts content from dark web sites
 //! - **Extractor**: Identifies IOCs and artifacts
 //! - **Analyst**: Synthesizes intelligence summaries
+//!
+//! ## Modular Personas
+//!
+//! Agent behaviors are defined via TOML persona files in `prompts/`.
+//! See [`persona::PersonaRegistry`] for loading and managing personas.
 
 pub mod backend;
+pub mod persona;
+pub mod specialists;
 pub mod refiner;
 pub mod crawler;
 pub mod filter;
@@ -18,6 +25,8 @@ pub mod analyst;
 pub mod traits;
 
 pub use backend::*;
+pub use persona::*;
+pub use specialists::*;
 pub use refiner::*;
 pub use crawler::*;
 pub use filter::*;
