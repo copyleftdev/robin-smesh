@@ -96,6 +96,16 @@ pub enum OsintPayload {
         findings: Vec<EnrichmentFinding>,
     },
 
+    /// Blockchain temporal analysis results
+    BlockchainAnalysis {
+        /// The cryptocurrency address analyzed
+        address: String,
+        /// Blockchain network (bitcoin, ethereum, etc.)
+        chain: String,
+        /// Analysis results
+        analysis: WalletAnalysis,
+    },
+
     /// Heartbeat signal for agent liveness
     Heartbeat {
         agent_id: String,
@@ -125,6 +135,40 @@ pub enum InsightCategory {
     Attribution,
 }
 
+/// Blockchain wallet temporal analysis results
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WalletAnalysis {
+    /// First transaction timestamp (Unix epoch)
+    pub first_seen: Option<i64>,
+    /// Last transaction timestamp (Unix epoch)
+    pub last_seen: Option<i64>,
+    /// Total number of transactions
+    pub tx_count: u32,
+    /// Total received (in smallest unit, e.g., satoshis)
+    pub total_received: u64,
+    /// Total sent (in smallest unit)
+    pub total_sent: u64,
+    /// Current balance (in smallest unit)
+    pub balance: u64,
+    /// Detected temporal patterns
+    pub patterns: Vec<TemporalPattern>,
+    /// Risk indicators
+    pub risk_indicators: Vec<String>,
+}
+
+/// Temporal patterns detected in blockchain activity
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TemporalPattern {
+    /// Pattern type (e.g., "regular_interval", "burst_activity", "dormant_then_active")
+    pub pattern_type: String,
+    /// Human-readable description
+    pub description: String,
+    /// Confidence score (0.0 - 1.0)
+    pub confidence: f64,
+    /// Supporting data points
+    pub evidence: Vec<String>,
+}
+
 /// A finding from external OSINT enrichment
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EnrichmentFinding {
@@ -150,6 +194,7 @@ pub enum AgentType {
     Scraper,
     Extractor,
     Enricher,
+    BlockchainAnalyst,
     Analyst,
 }
 

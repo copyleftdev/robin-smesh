@@ -11,8 +11,9 @@ use tokio::time::interval;
 use tracing::{debug, error, info, warn};
 
 use robin_agents::{
-    AgentConfig, AgentError, AnalystAgent, CrawlerAgent, EnrichmentAgent, EnrichmentConfig,
-    ExtractorAgent, FilterAgent, OsintAgent, RefinerAgent, ScraperAgent, SharedBackend,
+    AgentConfig, AgentError, AnalystAgent, BlockchainAgent, BlockchainConfig, CrawlerAgent,
+    EnrichmentAgent, EnrichmentConfig, ExtractorAgent, FilterAgent, OsintAgent, RefinerAgent,
+    ScraperAgent, SharedBackend,
 };
 use robin_core::{Field, OsintPayload, Signal};
 use robin_tor::TorConfig;
@@ -35,6 +36,8 @@ pub struct SwarmConfig {
     pub use_specialists: bool,
     /// Enable external OSINT enrichment (GitHub, Brave search)
     pub enable_enrichment: bool,
+    /// Enable blockchain temporal analysis
+    pub enable_blockchain: bool,
 }
 
 /// The OSINT swarm coordinator
@@ -45,6 +48,7 @@ pub struct Swarm {
     max_runtime_secs: u64,
     use_specialists: bool,
     enable_enrichment: bool,
+    enable_blockchain: bool,
     field: Field,
     agents: Vec<Box<dyn OsintAgent>>,
 }
@@ -54,6 +58,7 @@ impl Swarm {
     pub fn new(config: SwarmConfig) -> Result<Self, anyhow::Error> {
         let use_specialists = config.use_specialists;
         let enable_enrichment = config.enable_enrichment;
+        let enable_blockchain = config.enable_blockchain;
         let mut swarm = Self {
             backend: config.backend,
             tor_config: config.tor_config,
@@ -61,6 +66,7 @@ impl Swarm {
             max_runtime_secs: config.max_runtime_secs,
             use_specialists,
             enable_enrichment,
+            enable_blockchain,
             field: Field::new(),
             agents: Vec::new(),
         };
@@ -116,6 +122,16 @@ impl Swarm {
                 EnrichmentConfig::default(),
             );
             self.agents.push(Box::new(enricher));
+        }
+
+        // Blockchain agent (optional) - temporal analysis of crypto wallets
+        if self.enable_blockchain {
+            info!("Enabling blockchain temporal analysis (Blockstream, Etherscan)");
+            let blockchain = BlockchainAgent::new(
+                AgentConfig::default().with_id("blockchain-1"),
+                BlockchainConfig::default(),
+            );
+            self.agents.push(Box::new(blockchain));
         }
 
         // Analyst agent (1) - with or without specialists
@@ -269,6 +285,7 @@ mod tests {
             num_scrapers: 3,
             use_specialists: false,
             enable_enrichment: false,
+            enable_blockchain: false,
         };
 
         let swarm = Swarm::new(config);
@@ -289,6 +306,7 @@ mod tests {
             num_scrapers: 3,
             use_specialists: false,
             enable_enrichment: false,
+            enable_blockchain: false,
         };
 
         let mut swarm = Swarm::new(config).unwrap();

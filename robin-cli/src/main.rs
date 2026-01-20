@@ -81,6 +81,10 @@ enum Commands {
         /// Enable external OSINT enrichment (GitHub, Brave search)
         #[arg(long)]
         enrich: bool,
+
+        /// Enable blockchain temporal analysis (Blockstream, Etherscan)
+        #[arg(long)]
+        blockchain: bool,
     },
 
     /// Check Tor connection status
@@ -124,6 +128,7 @@ async fn main() -> Result<()> {
             scrapers,
             specialists,
             enrich,
+            blockchain,
         } => {
             run_query(
                 &query,
@@ -139,6 +144,7 @@ async fn main() -> Result<()> {
                 scrapers,
                 specialists,
                 enrich,
+                blockchain,
             )
             .await?;
         }
@@ -169,6 +175,7 @@ async fn run_query(
     scrapers: usize,
     use_specialists: bool,
     enable_enrichment: bool,
+    enable_blockchain: bool,
 ) -> Result<()> {
     println!("🕵️ Robin×SMESH - Decentralized Dark Web OSINT\n");
 
@@ -194,12 +201,20 @@ async fn run_query(
     let provider = if use_openrouter { "OpenRouter" } else if use_openai { "OpenAI" } else { "Anthropic" };
     let analyst_mode = if use_specialists { "multi-specialist (6 experts)" } else { "single" };
     let enrichment_mode = if enable_enrichment { "enabled" } else { "disabled" };
+    let blockchain_mode = if enable_blockchain { "enabled" } else { "disabled" };
     println!("📡 Provider: {} | Model: {}", provider, model);
     println!("🔍 Query: {}", query);
     println!("⏱️  Timeout: {}s", timeout);
+    
+    let optional_agents = [
+        if enable_enrichment { Some("1 enricher") } else { None },
+        if enable_blockchain { Some("1 blockchain") } else { None },
+    ].into_iter().flatten().collect::<Vec<_>>().join(", ");
+    let optional_str = if optional_agents.is_empty() { String::new() } else { format!("{}, ", optional_agents) };
+    
     println!("🤖 Agents: 1 refiner, {} crawlers, 1 filter, {} scrapers, 1 extractor, {}1 analyst ({})",
-        crawlers, scrapers, if enable_enrichment { "1 enricher, " } else { "" }, analyst_mode);
-    println!("🌐 External enrichment: {}\n", enrichment_mode);
+        crawlers, scrapers, optional_str, analyst_mode);
+    println!("🌐 External enrichment: {} | ⛓️  Blockchain analysis: {}\n", enrichment_mode, blockchain_mode);
 
     // Check Tor connection
     println!("🔌 Checking Tor connection...");
@@ -225,6 +240,7 @@ async fn run_query(
         num_scrapers: scrapers,
         use_specialists,
         enable_enrichment,
+        enable_blockchain,
     };
 
     let mut swarm = Swarm::new(config)?;

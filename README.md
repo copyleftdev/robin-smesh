@@ -77,6 +77,12 @@ ANTHROPIC_API_KEY=sk-ant-... ./target/release/robin-smesh query \
   --enrich \
   --specialists
 
+# Blockchain temporal analysis (BTC/ETH wallet patterns)
+ANTHROPIC_API_KEY=sk-ant-... ./target/release/robin-smesh query \
+  -q "ransomware bitcoin wallets" \
+  --blockchain \
+  --specialists
+
 # Use OpenAI instead
 OPENAI_API_KEY=sk-... ./target/release/robin-smesh query \
   -q "ransomware payments" \
@@ -159,6 +165,20 @@ With `--enrich`, extracted artifacts are queried against surface web sources:
 - **Brave Search** – IPs, domains, malware hashes, threat intel
 
 This bridges dark web findings with public attribution data.
+
+## Blockchain Temporal Analysis
+
+With `--blockchain`, extracted cryptocurrency addresses are analyzed for temporal patterns:
+
+- **Bitcoin** – Blockstream API (no key required)
+- **Ethereum** – Etherscan API (optional `ETHERSCAN_API_KEY` for higher rate limits)
+
+Analysis includes:
+- Wallet age (first/last transaction)
+- Transaction frequency and volume
+- **Temporal patterns** – Regular intervals, burst activity, dormancy periods
+- **Timezone inference** – Activity concentration by hour
+- Risk indicators (high volume, recent activity, contract interactions)
 
 ## Example Reports
 

@@ -23,6 +23,7 @@ pub mod filter;
 pub mod scraper;
 pub mod extractor;
 pub mod enricher;
+pub mod blockchain;
 pub mod analyst;
 pub mod traits;
 
@@ -35,5 +36,6 @@ pub use filter::*;
 pub use scraper::*;
 pub use extractor::*;
 pub use enricher::*;
+pub use blockchain::*;
 pub use analyst::*;
 pub use traits::*;
