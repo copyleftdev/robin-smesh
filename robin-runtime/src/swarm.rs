@@ -31,6 +31,8 @@ pub struct SwarmConfig {
     pub num_crawlers: usize,
     /// Number of scraper agents
     pub num_scrapers: usize,
+    /// Use multi-specialist analyst mode
+    pub use_specialists: bool,
 }
 
 /// The OSINT swarm coordinator
@@ -39,6 +41,7 @@ pub struct Swarm {
     tor_config: TorConfig,
     tick_interval_ms: u64,
     max_runtime_secs: u64,
+    use_specialists: bool,
     field: Field,
     agents: Vec<Box<dyn OsintAgent>>,
 }
@@ -46,11 +49,13 @@ pub struct Swarm {
 impl Swarm {
     /// Create a new swarm with configuration
     pub fn new(config: SwarmConfig) -> Result<Self, anyhow::Error> {
+        let use_specialists = config.use_specialists;
         let mut swarm = Self {
             backend: config.backend,
             tor_config: config.tor_config,
             tick_interval_ms: config.tick_interval_ms,
             max_runtime_secs: config.max_runtime_secs,
+            use_specialists,
             field: Field::new(),
             agents: Vec::new(),
         };
@@ -98,11 +103,19 @@ impl Swarm {
         let extractor = ExtractorAgent::new(AgentConfig::default().with_id("extractor-1"));
         self.agents.push(Box::new(extractor));
 
-        // Analyst agent (1)
-        let analyst = AnalystAgent::new(
-            AgentConfig::default().with_id("analyst-1"),
-            self.backend.clone(),
-        );
+        // Analyst agent (1) - with or without specialists
+        let analyst = if self.use_specialists {
+            info!("Using multi-specialist analyst mode");
+            AnalystAgent::new_with_specialists(
+                AgentConfig::default().with_id("analyst-1"),
+                self.backend.clone(),
+            )
+        } else {
+            AnalystAgent::new(
+                AgentConfig::default().with_id("analyst-1"),
+                self.backend.clone(),
+            )
+        };
         self.agents.push(Box::new(analyst));
 
         info!("Initialized {} agents", self.agents.len());
@@ -239,6 +252,7 @@ mod tests {
             max_runtime_secs: 300,
             num_crawlers: 2,
             num_scrapers: 3,
+            use_specialists: false,
         };
 
         let swarm = Swarm::new(config);
@@ -257,6 +271,7 @@ mod tests {
             max_runtime_secs: 300,
             num_crawlers: 2,
             num_scrapers: 3,
+            use_specialists: false,
         };
 
         let mut swarm = Swarm::new(config).unwrap();

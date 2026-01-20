@@ -73,6 +73,10 @@ enum Commands {
         /// Number of scraper agents
         #[arg(long, default_value = "3")]
         scrapers: usize,
+
+        /// Use multi-specialist analyst mode (6 experts + lead synthesis)
+        #[arg(long)]
+        specialists: bool,
     },
 
     /// Check Tor connection status
@@ -114,6 +118,7 @@ async fn main() -> Result<()> {
             timeout,
             crawlers,
             scrapers,
+            specialists,
         } => {
             run_query(
                 &query,
@@ -127,6 +132,7 @@ async fn main() -> Result<()> {
                 timeout,
                 crawlers,
                 scrapers,
+                specialists,
             )
             .await?;
         }
@@ -155,6 +161,7 @@ async fn run_query(
     timeout: u64,
     crawlers: usize,
     scrapers: usize,
+    use_specialists: bool,
 ) -> Result<()> {
     println!("🕵️ Robin×SMESH - Decentralized Dark Web OSINT\n");
 
@@ -178,11 +185,12 @@ async fn run_query(
     };
 
     let provider = if use_openrouter { "OpenRouter" } else if use_openai { "OpenAI" } else { "Anthropic" };
+    let analyst_mode = if use_specialists { "multi-specialist (6 experts)" } else { "single" };
     println!("📡 Provider: {} | Model: {}", provider, model);
     println!("🔍 Query: {}", query);
     println!("⏱️  Timeout: {}s", timeout);
-    println!("🤖 Agents: 1 refiner, {} crawlers, 1 filter, {} scrapers, 1 extractor, 1 analyst\n",
-        crawlers, scrapers);
+    println!("🤖 Agents: 1 refiner, {} crawlers, 1 filter, {} scrapers, 1 extractor, 1 analyst ({})\n",
+        crawlers, scrapers, analyst_mode);
 
     // Check Tor connection
     println!("🔌 Checking Tor connection...");
@@ -206,6 +214,7 @@ async fn run_query(
         max_runtime_secs: timeout,
         num_crawlers: crawlers,
         num_scrapers: scrapers,
+        use_specialists,
     };
 
     let mut swarm = Swarm::new(config)?;
