@@ -34,9 +34,9 @@ enum Commands {
         #[arg(short, long)]
         query: String,
 
-        /// LLM model to use
-        #[arg(short, long, default_value = "claude-sonnet-4-20250514")]
-        model: String,
+        /// LLM model to use (auto-selects based on provider if not specified)
+        #[arg(short, long)]
+        model: Option<String>,
 
         /// Anthropic API key (or set ANTHROPIC_API_KEY env var)
         #[arg(long, env = "ANTHROPIC_API_KEY")]
@@ -57,6 +57,10 @@ enum Commands {
         /// Use OpenRouter instead of Anthropic
         #[arg(long)]
         openrouter: bool,
+
+        /// Use a less restrictive model for security research (OpenRouter only)
+        #[arg(long)]
+        permissive: bool,
 
         /// Output file for the summary (default: summary_<timestamp>.md)
         #[arg(short, long)]
@@ -126,6 +130,7 @@ async fn main() -> Result<()> {
             openrouter_key,
             openai,
             openrouter,
+            permissive,
             output,
             timeout,
             crawlers,
@@ -135,9 +140,12 @@ async fn main() -> Result<()> {
             blockchain,
             pastes,
         } => {
+            // Select appropriate model based on provider
+            let effective_model = select_model(model, openrouter, openai, permissive);
+            
             run_query(
                 &query,
-                &model,
+                &effective_model,
                 anthropic_key,
                 api_key,
                 openrouter_key,
@@ -164,6 +172,36 @@ async fn main() -> Result<()> {
     }
 
     Ok(())
+}
+
+/// Select the appropriate model based on provider and flags
+/// 
+/// Model recommendations for OSINT/Threat Intelligence:
+/// - Anthropic direct: claude-sonnet-4-20250514 (default, excellent analysis)
+/// - OpenAI: gpt-4o (strong reasoning)
+/// - OpenRouter standard: anthropic/claude-sonnet-4.5 (best quality)
+/// - OpenRouter permissive: mistralai/mistral-large-2512 (less restrictive for security research)
+fn select_model(user_model: Option<String>, openrouter: bool, openai: bool, permissive: bool) -> String {
+    // If user specified a model, use it
+    if let Some(m) = user_model {
+        return m;
+    }
+    
+    // Auto-select based on provider
+    if openrouter {
+        if permissive {
+            // Mistral Large 2512 - excellent for security research, less restrictive
+            "mistralai/mistral-large-2512".to_string()
+        } else {
+            // Claude Sonnet 4.5 via OpenRouter - best quality
+            "anthropic/claude-sonnet-4.5".to_string()
+        }
+    } else if openai {
+        "gpt-4o".to_string()
+    } else {
+        // Anthropic direct
+        "claude-sonnet-4-20250514".to_string()
+    }
 }
 
 #[allow(clippy::too_many_arguments)]
