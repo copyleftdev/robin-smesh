@@ -1,6 +1,18 @@
-# Robin×SMESH
-
-**Decentralized Dark Web OSINT using SMESH Signal Diffusion**
+```
+                    ██████╗  ██████╗ ██████╗ ██╗███╗   ██╗
+                    ██╔══██╗██╔═══██╗██╔══██╗██║████╗  ██║
+                    ██████╔╝██║   ██║██████╔╝██║██╔██╗ ██║
+                    ██╔══██╗██║   ██║██╔══██╗██║██║╚██╗██║
+                    ██║  ██║╚██████╔╝██████╔╝██║██║ ╚████║
+                    ╚═╝  ╚═╝ ╚═════╝ ╚═════╝ ╚═╝╚═╝  ╚═══╝
+                         ╔═╗╔╦╗╔═╗╔═╗╦ ╦
+                     ×   ╚═╗║║║║╣ ╚═╗╠═╣   ×
+                         ╚═╝╩ ╩╚═╝╚═╝╩ ╩
+        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+              🕸️  Decentralized Dark Web OSINT  🕸️
+                   Signal Diffusion Protocol
+        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
 
 A Rust reimagining of [Robin](https://github.com/apurvsinghgautam/robin) that replaces central LLM orchestration with [SMESH](https://github.com/copyleftdev/smesh-rust)'s plant-inspired signal diffusion protocol.
 
@@ -35,7 +47,8 @@ A Rust reimagining of [Robin](https://github.com/apurvsinghgautam/robin) that re
 3. **RawResult** → Filter senses batch, emits **FilteredResult** (top 20)
 4. **FilteredResult** → Scrapers sense, emit **ScrapedContent**
 5. **ScrapedContent** → Extractor senses, emits **ExtractedArtifacts** (IOCs)
-6. **ScrapedContent + Artifacts** → Analyst senses, emits **Summary**
+6. **ExtractedArtifacts** → Enricher senses, queries surface web, emits **EnrichedArtifacts**
+7. **ScrapedContent + Artifacts** → Analyst senses, emits **Summary**
 
 ## Quick Start
 
@@ -46,13 +59,29 @@ cargo build --release
 # Check Tor connection
 ./target/release/robin-smesh status
 
-# Run investigation
-OPENAI_API_KEY=sk-... ./target/release/robin-smesh query \
+# Run investigation (Anthropic is default)
+ANTHROPIC_API_KEY=sk-ant-... ./target/release/robin-smesh query \
   -q "ransomware payments" \
-  -m gpt-4o-mini \
   --timeout 300
 
-# Use OpenRouter instead
+# Multi-specialist mode (6 expert analysts + lead synthesis)
+ANTHROPIC_API_KEY=sk-ant-... ./target/release/robin-smesh query \
+  -q "threat actor infrastructure" \
+  --specialists
+
+# External OSINT enrichment (GitHub + Brave search)
+ANTHROPIC_API_KEY=sk-ant-... ./target/release/robin-smesh query \
+  -q "data breach credentials" \
+  --enrich \
+  --specialists
+
+# Use OpenAI instead
+OPENAI_API_KEY=sk-... ./target/release/robin-smesh query \
+  -q "ransomware payments" \
+  --openai \
+  -m gpt-4o-mini
+
+# Use OpenRouter
 OPENROUTER_API_KEY=... ./target/release/robin-smesh query \
   -q "data breach credentials" \
   --openrouter \
@@ -70,7 +99,13 @@ OPENROUTER_API_KEY=... ./target/release/robin-smesh query \
   # Mac
   brew install tor && brew services start tor
   ```
-- **LLM API Key** (OpenAI, OpenRouter, or local)
+- **LLM API Key**:
+  - `ANTHROPIC_API_KEY` (default, recommended)
+  - `OPENAI_API_KEY` (with `--openai` flag)
+  - `OPENROUTER_API_KEY` (with `--openrouter` flag)
+- **Optional for enrichment**:
+  - `GITHUB_TOKEN` – Increases GitHub API rate limits
+  - `BRAVE_API_KEY` – Enables Brave Search integration
 
 ## Crate Structure
 
@@ -100,6 +135,40 @@ Automatically extracts:
 - 🐛 CVE identifiers
 - ⚔️ MITRE ATT&CK TTPs
 - 🌐 Domains and IPs
+
+## Multi-Specialist Analysis
+
+With `--specialists`, analysis is performed by 6 expert personas before synthesis:
+
+| Specialist | Focus |
+|------------|-------|
+| 🎯 **Threat Intel** | Actor TTPs, campaign patterns, IOC correlation |
+| 💰 **Financial Crime** | Cryptocurrency flows, money laundering, fraud |
+| 🔐 **Technical** | Malware, exploits, infrastructure analysis |
+| 🌍 **Geopolitical** | Nation-state activity, regional threats |
+| ⚖️ **Legal/Regulatory** | Compliance, jurisdiction, evidence handling |
+| 🔮 **Strategic** | Trend forecasting, risk assessment |
+
+## External OSINT Enrichment
+
+With `--enrich`, extracted artifacts are queried against surface web sources:
+
+- **GitHub Code Search** – Emails, usernames, code snippets, hashes
+- **Brave Search** – IPs, domains, malware hashes, threat intel
+
+This bridges dark web findings with public attribution data.
+
+## Example Reports
+
+Sample investigation reports are available in [`reports/`](./reports/):
+
+```
+reports/
+├── summary_2026-01-20_15-24-29.md  # Ransomware payment investigation
+├── summary_2026-01-20_15-26-30.md  # Threat actor infrastructure
+├── summary_2026-01-20_15-51-10.md  # Multi-specialist analysis
+└── summary_2026-01-20_16-09-02.md  # With external enrichment
+```
 
 ## License
 

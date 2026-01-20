@@ -1,0 +1,2 @@
+# Investigation reports are saved here
+# Run with: robin-smesh query -q "your query" --timeout 300
